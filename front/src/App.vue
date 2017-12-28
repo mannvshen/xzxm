@@ -1,18 +1,20 @@
 <template>
-    <div id='app'>
-        <personal></personal>
-    </div>
+  <div id='app'>
+    <hello-world></hello-world>
+  </div>
 </template>
 
 <script>
-import Personal from './components/personal'
+import HelloWorld from "./components/HelloWorld";
+
 export default {
   name: "app",
   components: {
-    Personal
+    HelloWorld
   }
 };
 </script>
+
 <style>
   @charset 'UTF-8';
   *{
