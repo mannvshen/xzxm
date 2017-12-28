@@ -5,6 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+
 var index = require('./routes/index');
 var users = require('./routes/users');
 
@@ -27,9 +28,20 @@ app.use('/users', users);
 
 
 
-//后台接口
+
+//前台接口
 const back_article = require('./api/before/article');
 app.use('/backArticle', back_article);
+
+// 后台接口
+const api = require('./api/back/api');
+app.use('/back/api', api);
+const classify = require('./api/back/class');
+app.use('/back/classify', classify);
+const article = require('./api/back/article');
+app.use('/back/article', article);
+const user = require('./api/back/user');
+app.use('/back/user', user);
 
 
 

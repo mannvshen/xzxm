@@ -1,28 +1,28 @@
 const express = require('express');
 const router = express.Router();
-var generateUUID = require("../common/Unique")
-var creatTime = require("../common/creatTime")
+var generateUUID = require("../common/Unique");
+var creatTime = require("../common/creatTime");
 const moment = require('moment'); //数据库时间转js时间格式
 const {
     query,
     sqlHandle,
     readHandle,
     searchHandle
-} = require('../../config/db_connect');
-router.get('/', (req, res, next) => {
-    const sql = `select * from jishu`;
-    readHandle(sql).then((data) => {
-        res.send({
-            code: '1010',
-            data
-        });
-    }).catch((err) => {
-        res.send({
-            code: '1011',
-            err
-        })
-    })
-})
+} = require('../../config/connect_db');
+// router.get('/', (req, res, next) => {
+//     const sql = `select * from jishu`;
+//     readHandle(sql).then((data) => {
+//         res.send({
+//             code: '1010',
+//             data
+//         });
+//     }).catch((err) => {
+//         res.send({
+//             code: '1011',
+//             err
+//         })
+//     })
+// })
 
 router.get('/apilist', (req, res, next) => {
     const sql = `select * from apilist`;
@@ -38,13 +38,13 @@ router.get('/apilist', (req, res, next) => {
         })
     })
 })
-
+// 头部导航数据查询
 router.get("/getNav", function(req, res, next) {
     var sqlone = "select * from one_class"
     var sqltwo = "select * from two_class"
     const asyncGetClass=async function(){
-        let oneClass=await  readHandle(sqlone)
-        let twoClass=await  readHandle(sqltwo)
+        let oneClass=await readHandle(sqlone)
+        let twoClass=await readHandle(sqltwo)
 
         return {oneClass,twoClass}
     }
@@ -79,9 +79,73 @@ router.get("/getNav", function(req, res, next) {
         })
     })
 })
+
+// 获取所有文章查询
+router.get("/getArticleAll", function(req, res, next) {
+    var sqlone = `select * from one_class`;
+    var sqltwo = `select * from two_class`;
+    // console.log(sqlone);
+    // 拼接查询文章的sql
+    const connectSql=(oneClass)=>{
+         // 根据一级类名拼接sql
+         var selectArtSql = `select * from (`
+         oneClass.forEach(function(i, index) {
+             if (index < (oneClass.length - 1)) {
+                 selectArtSql += `select * from ${i.enname} UNION ALL `
+             } else {
+                 selectArtSql += ` select * from ${i.enname})as tabel_all where art_show=1 order by time desc`
+             }
+ 
+         }, this);
+         return selectArtSql
+    }
+    // 将一二级类名的中英文标识添加入文章列表
+    const connectArticle=(data)=>{
+        const {articleData,oneClass,twoClass}=data
+        return  articleData.map(function(i) {
+                    oneClass.forEach(function(j) {
+                        if (j.id == i.oneId) {
+                            i.enname_one = j.enname
+                            i.cnname_one = j.cnname
+                        }
+                    })
+                    twoClass.forEach(function(j) {
+                        if (j.id == i.twoId) {
+                            i.enname_two = j.enname
+                            i.cnname_two = j.cnname
+                        }
+                    })
+                    return i
+                });
+         
+    }
+
+    const asyncGetArticle=async function(){
+        let oneClass=await  readHandle(sqlone)
+        let twoClass=await  readHandle(sqltwo)
+        let articleData=await  readHandle(connectSql(oneClass))
+        return connectArticle({articleData,oneClass,twoClass})
+    }
+
+    asyncGetArticle().then((data)=>{
+        res.send({
+            code: "6012",
+            data,
+            msg: "查询成功"
+        })
+    }).catch((err)=>{
+        res.send({
+            code: "6013",
+            data: null,
+            msg: "查询失败"
+        })
+    })
+})
+
+// 根据不同的一级类名获取相应的二级类名
 router.post("/getClassTwo", function(req, res, next) {
     var sql = `select * from two_class where parent_id='${req.body.oneId}'`
-    readHandle(sqlone).then((data)=>{
+    readHandle(sql).then((data)=>{
         res.send({
             code: "6020",
             msg: "数据查询成功",
@@ -91,6 +155,55 @@ router.post("/getClassTwo", function(req, res, next) {
         res.send({
             code: "6021",
             msg: "数据查询失败"
+        })
+    })
+})
+
+// 根据id获取文章
+router.get("/getArticle", function(req, res, next) {
+    var sqlone = `select * from one_class`
+    // 拼接查询文章的sql
+    const connectSql=(oneClass)=>{
+         // 根据一级类名拼接sql
+         var selectArtSql = `select * from (`
+         oneClass.forEach(function(i, index) {
+             if (index < (oneClass.length - 1)) {
+                 selectArtSql += `select * from ${i.enname} UNION ALL `
+             } else {
+                 selectArtSql += ` select * from ${i.enname})as tabel_all where id='${req.query.id}' and art_show=1 order by time desc`
+             }
+ 
+         }, this);
+         return selectArtSql
+    }
+    // 更新文章读取量
+    const connectUpdataSql=(oneClass)=>{
+        if(articleData.length>0){
+            let sql=`CREATE VIEW all_article_table(id,visitors) AS SELECT id,visitors FROM `
+            oneClass.forEach((i,index)=>{
+                sql+=`${i.enname} `
+            })
+           
+        }
+    }
+    const asyncGetArticle=async function(){
+        let oneClass=await  readHandle(sqlone)
+        let articleData=await  readHandle(connectSql(oneClass))
+        // let articleData=await  sqlHandle(connectUpdataSql(oneClass))
+        return articleData
+    }
+
+    asyncGetArticle().then((data)=>{
+        res.send({
+            code: "6012",
+            data,
+            msg: "查询成功"
+        })
+    }).catch((err)=>{
+        res.send({
+            code: "6013",
+            data: null,
+            msg: "查询失败"
         })
     })
 })
