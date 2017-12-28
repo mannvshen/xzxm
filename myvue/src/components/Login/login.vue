@@ -4,11 +4,11 @@
             <h1>个人博客:</h1>
             <p> 
                 <label for="user">账号 : </label>
-                <input type="text" placeholder="请输入用户名" id="user">
+                <input type="text" placeholder="请输入用户名" id="user" required>
             </p>
             <p>
                 <label for="pwd">密码 : </label>
-                <input type="password" placeholder="请输入密码" id="pwd">
+                <input type="password" placeholder="请输入密码" id="pwd" required>
             </p>
             <button><router-link to="/home">登录</router-link></button>
         </div>

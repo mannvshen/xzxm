@@ -69,7 +69,7 @@
                         </el-submenu>
                         </el-menu>
                     </el-col>
-                    <el-col :span="8">
+                    <el-col :span="20">
                         <router-view></router-view>
                     </el-col>
                 </el-row>
